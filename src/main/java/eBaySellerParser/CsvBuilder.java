@@ -4,6 +4,8 @@ import com.ebay.soap.eBLBaseComponents.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CsvBuilder
 {
@@ -19,15 +21,16 @@ public class CsvBuilder
             List<ItemType> items = itemsMap.get(userId);
             if (builder.length() != 0)
             {
-                builder.append("\t\t\t\t\t\t\t\t\n");
-                builder.append("\t\t\t\t\t\t\t\t\n");
+                builder.append("\t\t\t\t\t\t\t\t\t\n");
+                builder.append("\t\t\t\t\t\t\t\t\t\n");
             }
 
-            builder.append(userId + "\t\t\t\t\t\t\t");
-            builder.append("\t\t\t\t\t\t\t\t\n");
-            builder.append("\t\t\t\t\t\t\t\t\n");
+            builder.append(userId + "\t\t\t\t\t\t\t\t");
+            builder.append("\t\t\t\t\t\t\t\t\t\n");
+            builder.append("\t\t\t\t\t\t\t\t\t\n");
 
-            for(ItemType item : items){
+            for (ItemType item : items)
+            {
                 String itemCsvString = itemToCsv(item);
                 builder.append(itemCsvString);
                 builder.append("\n");
@@ -39,7 +42,6 @@ public class CsvBuilder
 
     private String itemToCsv(ItemType item)
     {
-        StringBuilder builder = new StringBuilder();
         Integer quantitySold = null;
         if (item.getSellingStatus() != null)
         {
@@ -92,40 +94,83 @@ public class CsvBuilder
 
         Double itemCost = null;
         String itemCurrency = null;
+        boolean isAuction = false;
+        SellingStatusType sellingStatusType = item.getSellingStatus();
+        if (sellingStatusType != null)
+        {
+            AmountType itemPrice = sellingStatusType.getCurrentPrice();
+            if (itemPrice != null)
+            {
+                itemCost = itemPrice.getValue();
+                if (itemPrice.getCurrencyID() != null)
+                {
+                    itemCurrency = itemPrice.getCurrencyID().name();
+                }
+            }
 
-        AmountType itemPrice = item.getStartPrice();
-        if(itemPrice != null){
-            itemCost = itemPrice.getValue();
-            if(itemPrice.getCurrencyID() != null){
-                itemCurrency = itemPrice.getCurrencyID().name();
+            AmountType bidIncrement = sellingStatusType.getBidIncrement();
+            if (bidIncrement != null)
+            {
+                if (bidIncrement.getValue() > 0)
+                {
+                    isAuction = true;
+                }
             }
         }
 
         String itemCostString = null;
-        if(itemCost != null){
+        if (itemCost != null)
+        {
             itemCostString = itemCost.toString();
-            if(itemCurrency != null){
+            if (itemCurrency != null)
+            {
                 itemCostString += " " + itemCurrency;
             }
         }
 
         Integer quantityInStock = null;
-        if(item.getQuantity() != null){
+        if (item.getQuantity() != null)
+        {
             quantityInStock = item.getQuantity();
-            if(quantitySold != null){
+            if (quantitySold != null)
+            {
                 quantityInStock -= quantitySold;
             }
         }
 
+        Pattern pattern = Pattern.compile("^[A-Z0-9\\-]+$");
+        String partNumber = null;
+        if (item.getTitle() != null)
+        {
+            String[] titleParts = item.getTitle().split(" ");
+            int index = 0;
+            for (String titlePart : titleParts)
+            {
+                if (titlePart.length() > 6 && (index == 0 || index == 1 || index == titlePart.length() - 1))
+                {
+                    Matcher matcher = pattern.matcher(titlePart);
+                    if (matcher.matches())
+                    {
+                        partNumber = titlePart;
+                        break;
+                    }
+                }
+                index++;
+            }
+        }
+
+        StringBuilder builder = new StringBuilder();
+
         builder.append(item.getItemID() + "\t");   //AuctionNumber
-        builder.append("\t");           //PartNumber
+        builder.append(partNumber != null ? partNumber + "\t" : "\t");           //PartNumber
         builder.append(item.getConditionDisplayName() + "\t"); //Condition
         builder.append(item.getTitle() != null ? item.getTitle() + "\t" : "\t");  // description
         builder.append(quantityInStock != null ? quantityInStock + "\t" : "\t");  // Quantity in stock
         builder.append(quantitySold != null ? quantitySold + "\t" : "\t");  // Quantity sold
         builder.append(itemCostString != null ? itemCostString + "\t" : "\t");  //Price
         builder.append(shippingCostString != null ? shippingCostString + "\t" : "\t");   //Shipping cost
-        builder.append(pictureUrl != null ? pictureUrl : "");   //PictureLink
+        builder.append(pictureUrl != null ? pictureUrl + "\t" : "\t");   //PictureLink
+        builder.append(isAuction);   //PictureLink
         return builder.toString();
     }
 
@@ -140,7 +185,8 @@ public class CsvBuilder
         builder.append("Quantity sold\t");
         builder.append("Price\t");
         builder.append("Shipping cost\t");
-        builder.append("Picture link");
+        builder.append("Picture link\t");
+        builder.append("isAuction");
         return builder.toString();
     }
 }

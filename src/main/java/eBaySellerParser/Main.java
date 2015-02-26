@@ -64,6 +64,12 @@ public class Main
         {
             System.out.println("Was unable to create output file. Error: " + e.toString());
         }
+        if (System.console() != null)
+        {
+            System.out.println("");
+            System.out.println("");
+            System.console().readLine("Output file was formed successfully. Please press 'Enter' to exit");
+        }
 
     }
 }

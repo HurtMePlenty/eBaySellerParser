@@ -42,6 +42,11 @@ public class SellerService
 
         for (String userId : eBayUserIDs)
         {
+            userId = userId.trim();
+            if (userId.isEmpty())
+            {
+                continue;
+            }
             progressReporter.reportMessage("Getting data for seller " + userId);
             List<ItemType> itemTypeList = getItemListForUser(userId);
             result.put(userId, itemTypeList);
