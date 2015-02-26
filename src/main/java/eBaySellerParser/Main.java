@@ -43,6 +43,9 @@ public class Main
             System.out.println("Input.txt file wasn't found. Exception: " + e.toString());
             return;
         }
+        System.out.println("");
+        System.out.println("-------------------------------------");
+        System.out.println("");
         Map<String, List<ItemType>> data = sellerService.getAllItems(sellerIds);
         CsvBuilder csvBuilder = new CsvBuilder();
         String csv = csvBuilder.buildCsv(data);

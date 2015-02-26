@@ -109,11 +109,19 @@ public class CsvBuilder
             }
         }
 
+        Integer quantityInStock = null;
+        if(item.getQuantity() != null){
+            quantityInStock = item.getQuantity();
+            if(quantitySold != null){
+                quantityInStock -= quantitySold;
+            }
+        }
+
         builder.append(item.getItemID() + "\t");   //AuctionNumber
         builder.append("\t");           //PartNumber
         builder.append(item.getConditionDisplayName() + "\t"); //Condition
         builder.append(item.getTitle() != null ? item.getTitle() + "\t" : "\t");  // description
-        builder.append(item.getQuantity() != null ? item.getQuantity() + "\t" : "\t");  // Quantity in stock
+        builder.append(quantityInStock != null ? quantityInStock + "\t" : "\t");  // Quantity in stock
         builder.append(quantitySold != null ? quantitySold + "\t" : "\t");  // Quantity sold
         builder.append(itemCostString != null ? itemCostString + "\t" : "\t");  //Price
         builder.append(shippingCostString != null ? shippingCostString + "\t" : "\t");   //Shipping cost

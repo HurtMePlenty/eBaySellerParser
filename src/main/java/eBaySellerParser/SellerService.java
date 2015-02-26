@@ -17,13 +17,6 @@ public class SellerService
     private int periodsWith120Days;
     private ProgressReporter progressReporter;
 
-
-
-    public int getPeriodsWith120Days()
-    {
-        return periodsWith120Days;
-    }
-
     public void setPeriodsWith120Days(int periodsWith120Days)
     {
         this.periodsWith120Days = periodsWith120Days;
@@ -44,10 +37,12 @@ public class SellerService
 
     public Map<String, List<ItemType>> getAllItems(List<String> eBayUserIDs)
     {
+        progressReporter.reportMessage("Getting items for sellers: " + eBayUserIDs.toString());
         Map<String, List<ItemType>> result = new HashMap<String, List<ItemType>>();
 
         for (String userId : eBayUserIDs)
         {
+            progressReporter.reportMessage("Getting data for seller " + userId);
             List<ItemType> itemTypeList = getItemListForUser(userId);
             result.put(userId, itemTypeList);
         }
@@ -92,8 +87,10 @@ public class SellerService
             {
                 try
                 {
+                    progressReporter.reportMessage(String.format("Getting data for seller = [%s] period= [%d] page = [%d]", userId, i, currentPage));
                     ItemType[] items = getSellerListCall.getSellerList();
                     result.addAll(Arrays.asList(items));
+                    progressReporter.reportMessage(String.format("Received %d items. Total for seller = %d", items.length, result.size()));
                     if (items.length == 0)
                     {
                         System.out.print(i + " is empty");
@@ -108,7 +105,7 @@ public class SellerService
                 }
                 catch (Exception e)
                 {
-                    System.out.print(e.toString());
+                    progressReporter.reportMessage("Error occurred: " + e.toString());
                 }
             }
 
