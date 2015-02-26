@@ -7,9 +7,11 @@
     <!-- bean definitions here -->
 
     <bean id="sellerService" class="eBaySellerParser.SellerService">
-        <property name="eBayUserIDs">
-            <value>mem-store</value>
-        </property>
+        <property name="periodsWith120Days" value="1"></property>
+        <property name="progressReporter" ref="consoleProgressReporter"></property>
+    </bean>
+
+    <bean id="consoleProgressReporter" class="eBaySellerParser.ConsoleProgressReporter">
 
     </bean>
 
