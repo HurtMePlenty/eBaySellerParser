@@ -7,12 +7,11 @@
     <!-- bean definitions here -->
 
     <bean id="sellerService" class="eBaySellerParser.SellerService">
-        <property name="periodsWith120Days" value="1"></property>
+        <property name="periodsWith120Days" value="10"></property>
         <property name="progressReporter" ref="consoleProgressReporter"></property>
     </bean>
 
     <bean id="consoleProgressReporter" class="eBaySellerParser.ConsoleProgressReporter">
-
     </bean>
 
 </beans>
