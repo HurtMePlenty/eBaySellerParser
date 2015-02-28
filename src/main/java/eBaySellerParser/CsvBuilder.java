@@ -2,6 +2,7 @@ package eBaySellerParser;
 
 import com.ebay.soap.eBLBaseComponents.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -139,7 +140,8 @@ public class CsvBuilder
         }
 
         Pattern pattern = Pattern.compile("^[A-Z0-9\\-]+$");
-        String partNumber = null;
+        //String partNumber = null;
+        List<String> partNumbers = new ArrayList<String>();
         if (item.getTitle() != null)
         {
             String[] titleParts = item.getTitle().split(" ");
@@ -151,26 +153,38 @@ public class CsvBuilder
                     Matcher matcher = pattern.matcher(titlePart);
                     if (matcher.matches())
                     {
-                        partNumber = titlePart;
-                        break;
+                        partNumbers.add(titlePart);
+                        //break;
                     }
                 }
                 index++;
             }
         }
 
+        if(partNumbers.isEmpty()){
+            partNumbers.add(null); //we failed to find a partNumber - add null to populate all other field once
+        }
+
         StringBuilder builder = new StringBuilder();
 
-        builder.append(item.getItemID() + "\t");   //AuctionNumber
-        builder.append(partNumber != null ? partNumber + "\t" : "\t");           //PartNumber
-        builder.append(item.getConditionDisplayName() + "\t"); //Condition
-        builder.append(item.getTitle() != null ? item.getTitle() + "\t" : "\t");  // description
-        builder.append(quantityInStock != null ? quantityInStock + "\t" : "\t");  // Quantity in stock
-        builder.append(quantitySold != null ? quantitySold + "\t" : "\t");  // Quantity sold
-        builder.append(itemCostString != null ? itemCostString + "\t" : "\t");  //Price
-        builder.append(shippingCostString != null ? shippingCostString + "\t" : "\t");   //Shipping cost
-        builder.append(pictureUrl != null ? pictureUrl + "\t" : "\t");   //PictureLink
-        builder.append(isAuction);   //PictureLink
+        for(String partNumber : partNumbers) {
+
+            if(partNumbers.indexOf(partNumber) > 0){
+                builder.append("\n");
+            }
+
+            builder.append(item.getItemID() + "\t");   //AuctionNumber
+            builder.append(partNumber != null ? partNumber + "\t" : "\t");           //PartNumber
+            builder.append(item.getConditionDisplayName() + "\t"); //Condition
+            builder.append(item.getTitle() != null ? item.getTitle() + "\t" : "\t");  // description
+            builder.append(quantityInStock != null ? quantityInStock + "\t" : "\t");  // Quantity in stock
+            builder.append(quantitySold != null ? quantitySold + "\t" : "\t");  // Quantity sold
+            builder.append(itemCostString != null ? itemCostString + "\t" : "\t");  //Price
+            builder.append(shippingCostString != null ? shippingCostString + "\t" : "\t");   //Shipping cost
+            builder.append(pictureUrl != null ? pictureUrl + "\t" : "\t");   //PictureLink
+            builder.append(isAuction);   //PictureLink
+        }
+
         return builder.toString();
     }
 
