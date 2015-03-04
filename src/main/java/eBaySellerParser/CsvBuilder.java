@@ -2,50 +2,56 @@ package eBaySellerParser;
 
 import com.ebay.soap.eBLBaseComponents.*;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class CsvBuilder
-{
-    public String buildCsv(Map<String, List<ItemType>> itemsMap)
-    {
+public class CsvBuilder {
+    private StringBuilder content = new StringBuilder();
+
+    public void complete() {
         StringBuilder builder = new StringBuilder();
 
         builder.append(buildHeader());
         builder.append("\n");
 
-        for (String userId : itemsMap.keySet())
-        {
-            List<ItemType> items = itemsMap.get(userId);
-            if (builder.length() != 0)
-            {
-                builder.append("\t\t\t\t\t\t\t\t\t\n");
-                builder.append("\t\t\t\t\t\t\t\t\t\n");
-            }
+        builder.append(content);
 
-            builder.append(userId + "\t\t\t\t\t\t\t\t");
-            builder.append("\t\t\t\t\t\t\t\t\t\n");
-            builder.append("\t\t\t\t\t\t\t\t\t\n");
+        String result = builder.toString();
 
-            for (ItemType item : items)
-            {
-                String itemCsvString = itemToCsv(item);
-                builder.append(itemCsvString);
-                builder.append("\n");
+        try {
+
+            File file = new File("./output.csv");
+            if (!file.exists()) {
+
+                file.createNewFile();
             }
+            FileOutputStream outputStream = new FileOutputStream(file);
+            outputStream.write(result.getBytes(Charset.forName("UTF-8")));
+        } catch (Exception e) {
+            System.out.println("Was unable to create output file. Error: " + e.toString());
         }
 
-        return builder.toString();
     }
 
-    private String itemToCsv(ItemType item)
-    {
+    public void newSeller(String name) {
+        if (content.length() != 0) {
+            content.append("\t\t\t\t\t\t\t\t\t\n");
+            content.append("\t\t\t\t\t\t\t\t\t\n");
+        }
+        content.append(name + "\t\t\t\t\t\t\t\t");
+        content.append("\t\t\t\t\t\t\t\t\t\n");
+        content.append("\t\t\t\t\t\t\t\t\t\n");
+    }
+
+    public void addItem(ItemType item) {
         Integer quantitySold = null;
-        if (item.getSellingStatus() != null)
-        {
+        if (item.getSellingStatus() != null) {
             quantitySold = item.getSellingStatus().getQuantitySold();
         }
 
@@ -53,19 +59,15 @@ public class CsvBuilder
         String shippingCurrency = null;
 
         ShippingDetailsType shippingDetailsType = item.getShippingDetails();
-        if (shippingDetailsType != null)
-        {
+        if (shippingDetailsType != null) {
             InternationalShippingServiceOptionsType[] options = shippingDetailsType.getInternationalShippingServiceOption();
-            if (options != null && options.length > 0)
-            {
+            if (options != null && options.length > 0) {
                 InternationalShippingServiceOptionsType firstOption = options[0];
                 AmountType cost = firstOption.getShippingServiceCost();
-                if (cost != null)
-                {
+                if (cost != null) {
                     shippingCost = cost.getValue();
                     CurrencyCodeType currencyCodeType = cost.getCurrencyID();
-                    if (currencyCodeType != null)
-                    {
+                    if (currencyCodeType != null) {
                         shippingCurrency = currencyCodeType.name();
                     }
                 }
@@ -73,22 +75,18 @@ public class CsvBuilder
         }
 
         String shippingCostString = null;
-        if (shippingCost != null)
-        {
+        if (shippingCost != null) {
             shippingCostString = shippingCost.toString();
-            if (shippingCurrency != null)
-            {
+            if (shippingCurrency != null) {
                 shippingCostString += " " + shippingCurrency;
             }
         }
 
         String pictureUrl = null;
         PictureDetailsType pictureDetailsType = item.getPictureDetails();
-        if (pictureDetailsType != null)
-        {
+        if (pictureDetailsType != null) {
             String[] pictureUrls = pictureDetailsType.getPictureURL();
-            if (pictureUrls != null)
-            {
+            if (pictureUrls != null) {
                 pictureUrl = pictureUrls[0];
             }
         }
@@ -97,44 +95,35 @@ public class CsvBuilder
         String itemCurrency = null;
         boolean isAuction = false;
         SellingStatusType sellingStatusType = item.getSellingStatus();
-        if (sellingStatusType != null)
-        {
+        if (sellingStatusType != null) {
             AmountType itemPrice = sellingStatusType.getCurrentPrice();
-            if (itemPrice != null)
-            {
+            if (itemPrice != null) {
                 itemCost = itemPrice.getValue();
-                if (itemPrice.getCurrencyID() != null)
-                {
+                if (itemPrice.getCurrencyID() != null) {
                     itemCurrency = itemPrice.getCurrencyID().name();
                 }
             }
 
             AmountType bidIncrement = sellingStatusType.getBidIncrement();
-            if (bidIncrement != null)
-            {
-                if (bidIncrement.getValue() > 0)
-                {
+            if (bidIncrement != null) {
+                if (bidIncrement.getValue() > 0) {
                     isAuction = true;
                 }
             }
         }
 
         String itemCostString = null;
-        if (itemCost != null)
-        {
+        if (itemCost != null) {
             itemCostString = itemCost.toString();
-            if (itemCurrency != null)
-            {
+            if (itemCurrency != null) {
                 itemCostString += " " + itemCurrency;
             }
         }
 
         Integer quantityInStock = null;
-        if (item.getQuantity() != null)
-        {
+        if (item.getQuantity() != null) {
             quantityInStock = item.getQuantity();
-            if (quantitySold != null)
-            {
+            if (quantitySold != null) {
                 quantityInStock -= quantitySold;
             }
         }
@@ -142,17 +131,13 @@ public class CsvBuilder
         Pattern pattern = Pattern.compile("^[A-Z0-9\\-]+$");
         //String partNumber = null;
         List<String> partNumbers = new ArrayList<String>();
-        if (item.getTitle() != null)
-        {
+        if (item.getTitle() != null) {
             String[] titleParts = item.getTitle().split(" ");
             int index = 0;
-            for (String titlePart : titleParts)
-            {
-                if (titlePart.length() > 6 && (index == 0 || index == 1 || index == titlePart.length() - 1))
-                {
+            for (String titlePart : titleParts) {
+                if (titlePart.length() > 5 && (index == 0 || index == 1 || index == titlePart.length() - 1)) {
                     Matcher matcher = pattern.matcher(titlePart);
-                    if (matcher.matches())
-                    {
+                    if (matcher.matches()) {
                         partNumbers.add(titlePart);
                         //break;
                     }
@@ -161,15 +146,15 @@ public class CsvBuilder
             }
         }
 
-        if(partNumbers.isEmpty()){
+        if (partNumbers.isEmpty()) {
             partNumbers.add(null); //we failed to find a partNumber - add null to populate all other field once
         }
 
         StringBuilder builder = new StringBuilder();
 
-        for(String partNumber : partNumbers) {
+        for (String partNumber : partNumbers) {
 
-            if(partNumbers.indexOf(partNumber) > 0){
+            if (partNumbers.indexOf(partNumber) > 0) {
                 builder.append("\n");
             }
 
@@ -185,11 +170,11 @@ public class CsvBuilder
             builder.append(isAuction);   //PictureLink
         }
 
-        return builder.toString();
+        content.append(builder);
+        content.append("\n");
     }
 
-    private String buildHeader()
-    {
+    private String buildHeader() {
         StringBuilder builder = new StringBuilder();
         builder.append("Auction number\t");
         builder.append("PartNumber\t");

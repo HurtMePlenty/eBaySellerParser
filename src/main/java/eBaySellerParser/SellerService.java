@@ -16,6 +16,8 @@ public class SellerService
     private ApiContext apiContext;
     private int periodsWith120Days;
     private ProgressReporter progressReporter;
+    private int itemsPerPage = 200;
+    private CsvBuilder csvBuilder;
 
     public void setPeriodsWith120Days(int periodsWith120Days)
     {
@@ -27,6 +29,10 @@ public class SellerService
         this.progressReporter = progressReporter;
     }
 
+    public void setCsvBuilder(CsvBuilder csvBuilder) {
+        this.csvBuilder = csvBuilder;
+    }
+
     public SellerService()
     {
         apiContext = new ApiContext();
@@ -35,10 +41,9 @@ public class SellerService
         apiContext.setApiServerUrl("https://api.ebay.com/wsapi");
     }
 
-    public Map<String, List<ItemType>> getAllItems(List<String> eBayUserIDs)
+    public void getAllItems(List<String> eBayUserIDs)
     {
         progressReporter.reportMessage("Getting items for sellers: " + eBayUserIDs.toString());
-        Map<String, List<ItemType>> result = new HashMap<String, List<ItemType>>();
 
         for (String userId : eBayUserIDs)
         {
@@ -48,22 +53,33 @@ public class SellerService
                 continue;
             }
             progressReporter.reportMessage("Getting data for seller " + userId);
-            List<ItemType> itemTypeList = getItemListForUser(userId);
-            result.put(userId, itemTypeList);
+            csvBuilder.newSeller(userId);
+            getItemListForUser(userId);
         }
-
-        return result;
+        csvBuilder.complete();
     }
 
-    public List<ItemType> getItemListForUser(String userId)
+    private GetSellerListCall createGetSellerListCall(String userId, Calendar from, Calendar to, int currentPage){
+        GetSellerListCall getSellerListCall = new GetSellerListCall(apiContext);
+        getSellerListCall.setUserID(userId);
+
+        DetailLevelCodeType[] details = {DetailLevelCodeType.ITEM_RETURN_DESCRIPTION};
+        getSellerListCall.setDetailLevel(details);
+        TimeFilter fromTime = new TimeFilter(from, to);
+        getSellerListCall.setStartTimeFilter(fromTime);
+
+        PaginationType paginationType = new PaginationType();
+        paginationType.setEntriesPerPage(itemsPerPage);
+        paginationType.setPageNumber(currentPage);
+        getSellerListCall.setPagination(paginationType);
+
+        return getSellerListCall;
+    }
+
+    public void getItemListForUser(String userId)
     {
 
         //make several calls to retrive data
-
-        List<ItemType> result = new ArrayList<ItemType>();
-
-        GetSellerListCall getSellerListCall = new GetSellerListCall(apiContext);
-        getSellerListCall.setUserID(userId);
 
         Date now = new Date();
 
@@ -74,42 +90,43 @@ public class SellerService
         calendarFrom.setTime(now);
         calendarFrom.add(Calendar.DAY_OF_MONTH, -120);
 
-        DetailLevelCodeType[] details = {DetailLevelCodeType.RETURN_ALL};
-        getSellerListCall.setDetailLevel(details);
-        PaginationType paginationType = new PaginationType();
-        getSellerListCall.setPagination(paginationType);
-        paginationType.setEntriesPerPage(200);
+        int totalCount = 0;
 
         for (int i = 0; i < periodsWith120Days; i++)
         {
-            TimeFilter fromTime = new TimeFilter(calendarFrom, calendarTo);
-            getSellerListCall.setStartTimeFilter(fromTime);
             int currentPage = 1;
-            paginationType.setPageNumber(currentPage);
 
             boolean isLastPage = false;
             while (!isLastPage)
             {
                 try
                 {
+                    System.gc();
+                    GetSellerListCall getSellerListCall = createGetSellerListCall(userId, calendarFrom, calendarTo, currentPage);
                     progressReporter.reportMessage(String.format("Getting data for seller = [%s] period= [%d] page = [%d]", userId, i, currentPage));
                     ItemType[] items = getSellerListCall.getSellerList();
-                    result.addAll(Arrays.asList(items));
-                    progressReporter.reportMessage(String.format("Received %d items. Total for seller = %d", items.length, result.size()));
+                    for(ItemType item : items){
+                        csvBuilder.addItem(item);
+                    }
+
+                    totalCount += items.length;
+
+                    progressReporter.reportMessage(String.format("Received %d items. Total for seller = %d", items.length, totalCount));
                     if (items.length == 0)
                     {
                         System.out.print(i + " is empty");
                     }
-                    if (items.length < 200)
+                    if (items.length < itemsPerPage)
                     {
                         isLastPage = true;
                     } else
                     {
-                        paginationType.setPageNumber(++currentPage);
+                        currentPage++;
                     }
                 }
                 catch (Exception e)
                 {
+                    isLastPage = true;
                     progressReporter.reportMessage("Error occurred: " + e.toString());
                 }
             }
@@ -119,7 +136,6 @@ public class SellerService
         }
 
 
-        return result;
     }
 
 

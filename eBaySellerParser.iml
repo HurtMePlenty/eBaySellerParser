@@ -5,6 +5,8 @@
       <configuration>
         <fileset id="fileset" name="Spring Application Context" removed="false">
           <file>file://$MODULE_DIR$/src/eBaySellerParser/config.xml</file>
+          <file>file://$MODULE_DIR$/src/main/resources/config.xml</file>
+          <file>file://$MODULE_DIR$/src/main/resources/config.xml</file>
         </fileset>
       </configuration>
     </facet>
@@ -18,8 +20,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="lib" level="project" />
-    <orderEntry type="library" name="org.springframework:spring-context-support:4.0.3.RELEASE" level="project" />
     <orderEntry type="library" name="org.slf4j:log4j-over-slf4j:1.7.5" level="project" />
+    <orderEntry type="library" name="org.springframework:spring-context:4.0.3.RELEASE" level="project" />
   </component>
 </module>
-

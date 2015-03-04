@@ -46,24 +46,9 @@ public class Main
         System.out.println("");
         System.out.println("-------------------------------------");
         System.out.println("");
-        Map<String, List<ItemType>> data = sellerService.getAllItems(sellerIds);
-        CsvBuilder csvBuilder = new CsvBuilder();
-        String csv = csvBuilder.buildCsv(data);
-        try
-        {
-            File file = new File("./output.csv");
-            if (!file.exists())
-            {
 
-                file.createNewFile();
-            }
-            FileOutputStream outputStream = new FileOutputStream(file);
-            outputStream.write(csv.getBytes(Charset.forName("UTF-8")));
-        }
-        catch (Exception e)
-        {
-            System.out.println("Was unable to create output file. Error: " + e.toString());
-        }
+        sellerService.getAllItems(sellerIds);
+
         if (System.console() != null)
         {
             System.out.println("");
