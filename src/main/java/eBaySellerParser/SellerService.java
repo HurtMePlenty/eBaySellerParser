@@ -16,7 +16,7 @@ public class SellerService
     private ApiContext apiContext;
     private int periodsWith120Days;
     private ProgressReporter progressReporter;
-    private int itemsPerPage = 200;
+    private int itemsPerPage = 50;
     private CsvBuilder csvBuilder;
 
     public void setPeriodsWith120Days(int periodsWith120Days)
@@ -53,7 +53,6 @@ public class SellerService
                 continue;
             }
             progressReporter.reportMessage("Getting data for seller " + userId);
-            csvBuilder.newSeller(userId);
             getItemListForUser(userId);
         }
         csvBuilder.complete();
@@ -106,7 +105,7 @@ public class SellerService
                     progressReporter.reportMessage(String.format("Getting data for seller = [%s] period= [%d] page = [%d]", userId, i, currentPage));
                     ItemType[] items = getSellerListCall.getSellerList();
                     for(ItemType item : items){
-                        csvBuilder.addItem(item);
+                        csvBuilder.addItem(item, userId);
                     }
 
                     totalCount += items.length;
